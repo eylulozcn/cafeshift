@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CafeShift | Haftalık Plan</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #f4f5f7;
+            color: #243029;
+            font-family: system-ui, sans-serif;
+        }
+
+        main {
+            max-width: 1050px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        header, .toolbar, .navigation {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        h1 { margin-bottom: 4px; }
+        .subtitle { color: #68746d; margin-top: 0; }
+
+        a { color: #24634c; }
+
+        .card {
+            background: white;
+            border: 1px solid #e1e6e2;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        input, button, .button {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ccd5ce;
+            font: inherit;
+        }
+
+        button {
+            background: #24634c;
+            color: white;
+            border-color: #24634c;
+            cursor: pointer;
+        }
+
+        .button {
+            display: inline-block;
+            background: white;
+            text-decoration: none;
+        }
+
+        form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .navigation { margin-top: 22px; }
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 18px 12px;
+            text-align: left;
+            border-bottom: 1px solid #edf0ed;
+        }
+
+        th {
+            background: #f5f8f5;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .date {
+            display: block;
+            font-size: 13px;
+            color: #768078;
+            margin-top: 4px;
+        }
+
+        .employee {
+            display: inline-block;
+            background: #eaf4ed;
+            color: #24583c;
+            border-radius: 8px;
+            padding: 7px 12px;
+        }
+
+        .empty { color: #8c7661; }
+        .summary { color: #68746d; font-size: 14px; }
+
+        @media (max-width: 600px) {
+            main { margin-top: 20px; padding: 0 12px; }
+            .card { padding: 14px; }
+            th, td { padding: 14px 8px; }
+            .employee { padding: 6px 8px; }
+        }
+        select {
+    width: 100%;
+    min-width: 130px;
+    padding: 10px;
+    border: 1px solid #ccd5ce;
+    border-radius: 8px;
+    background: white;
+    color: #243029;
+    font: inherit;
+}
+
+select:focus {
+    outline: 2px solid #24634c;
+    outline-offset: 2px;
+}
+
+.errorlist {
+    color: #b42318;
+    padding-left: 20px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+textarea {
+    display: block;
+    width: 100%;
+    margin: 12px 0 16px;
+    padding: 16px;
+    border: 1px solid #ccd5ce;
+    border-radius: 10px;
+    background: #f9fbf9;
+    color: #243029;
+    font: inherit;
+    line-height: 1.6;
+    resize: vertical;
+}
+    </style>
+    
+</head>
+
+<body>
+        <section class="card">
+        <h2>Haftalık çalışma özeti</h2>
+        <p class="summary">
+            Kaydedilmiş plana göre hesaplanır.
+            Her vardiya 6 saattir; mola düşülmemiştir.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Çalışan</th>
+                        <th scope="col">Öğlen</th>
+                        <th scope="col">Akşam</th>
+                        <th scope="col">Vardiya</th>
+                        <th scope="col">Saat</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for employee in employee_totals %}
+                    <tr>
+                        <th scope="row">{{ employee.name }}</th>
+                        <td>{{ employee.day_count }}</td>
+                        <td>{{ employee.evening_count }}</td>
+                        <td>{{ employee.shift_count }}</td>
+                        <td><strong>{{ employee.hours }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Henüz çalışan eklenmedi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Planı paylaş</h2>
+        <p class="summary">
+            Bu metin son kaydedilen planı içerir.
+            Değişiklik yaptıysan önce haftayı kaydet.
+        </p>
+
+        <label for="share-text">Paylaşılacak metin</label>
+
+        <textarea
+            id="share-text"
+            readonly
+            rows="12"
+        >{{ share_text }}</textarea>
+
+        <button type="button" id="copy-plan">
+            Planı Kopyala
+        </button>
+
+        <p id="copy-status" role="status" aria-live="polite"></p>
+    </section>
+<main>
+    <header>
+        <div>
+            <h1>CafeShift</h1>
+            <p class="subtitle">Kafenin haftalık çalışma planı</p>
+        </div>
+        <a href="{% url 'admin:index' %}" class="button">
+            Yönetim paneli
+        </a>
+    </header>
+
+    <section class="card">
+        <div class="toolbar">
+            <div>
+                <h2>Haftalık vardiyalar</h2>
+                <p>
+                    {{ week_start|date:"d.m.Y" }}
+                    – {{ week_end|date:"d.m.Y" }}
+                </p>
+            </div>
+
+            <form method="get">
+                <label for="week">Tarih seç</label>
+                <input
+                    type="date"
+                    id="week"
+                    name="week"
+                    value="{{ week_start|date:'Y-m-d' }}"
+                    min="1900-01-01"
+                    max="2100-12-31"
+                    required
+                >
+                <button type="submit">Göster</button>
+            </form>
+        </div>
+
+        <nav class="navigation" aria-label="Hafta seçimi">
+            <a href="?week={{ previous_week|date:'Y-m-d' }}">
+                ← Önceki hafta
+            </a>
+            <a href="{% url 'weekly_schedule' %}">Bu hafta</a>
+            <a href="?week={{ next_week|date:'Y-m-d' }}">
+                Sonraki hafta →
+            </a>
+        </nav>
+
+        <div class="table-wrap">
+{% for message in messages %}
+    <p role="status">{{ message }}</p>
+{% endfor %}
+
+<form
+    method="post"
+    action="{% url 'weekly_schedule' %}?week={{ week_start|date:'Y-m-d' }}"
+    style="display: block;"
+>
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Gün</th>
+                    <th scope="col">12:00–18:00</th>
+                    <th scope="col">18:00–00:00</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for day in days %}
+                <tr>
+                    <th scope="row">
+                        {{ day.name }}
+                        <span class="date">
+                            {{ day.date|date:"d.m.Y" }}
+                        </span>
+                    </th>
+
+                    <td>
+                        <label
+                            class="sr-only"
+                            for="{{ day.day_field.id_for_label }}"
+                        >
+                            {{ day.day_field.label }}
+                        </label>
+
+                        {{ day.day_field }}
+                        {{ day.day_field.errors }}
+                    </td>
+
+                    <td>
+                        <label
+                            class="sr-only"
+                            for="{{ day.evening_field.id_for_label }}"
+                        >
+                            {{ day.evening_field.label }}
+                        </label>
+
+                        {{ day.evening_field }}
+                        {{ day.evening_field.errors }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="navigation">
+        <p class="summary">
+            Kayıtlı plan:
+            {{ filled_count }} / 14 vardiya dolu
+            · {{ empty_count }} vardiya boş
+        </p>
+
+        <button type="submit">Haftayı Kaydet</button>
+    </div>
+
+    <p class="summary">
+        Değişikliklerini hafta değiştirmeden önce kaydet.
+        “Atanmadı” seçimi mevcut atamayı kaldırır.
+    </p>
+</form>
+    </section>
+</main>
+<script>
+    const copyButton = document.getElementById("copy-plan");
+    const shareText = document.getElementById("share-text");
+    const copyStatus = document.getElementById("copy-status");
+
+    copyButton.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(shareText.value);
+            copyStatus.textContent =
+                "Plan kopyalandı. WhatsApp’a yapıştırabilirsin.";
+        } catch {
+            shareText.focus();
+            shareText.select();
+            copyStatus.textContent =
+                "Otomatik kopyalama yapılamadı. Seçili metni Ctrl + C ile kopyala.";
+        }
+    });
+</script>
+</body>
+</html>

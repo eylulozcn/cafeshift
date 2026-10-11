@@ -1,0 +1,19 @@
+# Python ortamı ve yerel ayarlar
+.venv/
+.env
+.env.*
+!.env.example
+
+# Python geçici dosyaları
+__pycache__/
+*.py[cod]
+
+# Yerel veritabanı ve günlükler
+db.sqlite3
+*.log
+
+# Editör ve sistem dosyaları
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
