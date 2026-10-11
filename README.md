@@ -18,7 +18,8 @@ planned working hours, and copy the weekly schedule for sharing.
 - Copy the saved schedule as plain text
 - MySQL persistence and a database uniqueness constraint
 - Atomic weekly updates
-
+- Recurring weekly employee availability
+- Availability labels and validation in the weekly scheduling form
 ## Tech Stack
 
 - Python
@@ -31,7 +32,7 @@ planned working hours, and copy the weekly schedule for sharing.
 
 This version supports manual scheduling for a single café.
 Each shift is counted as six planned hours, without deducting breaks.
-Employee availability and automatic scheduling are not implemented yet.
+Weekly availability is supported. Date-specific exceptions and automatic scheduling are not implemented yet.
 
 ## Local Setup — Windows Command Prompt
 
