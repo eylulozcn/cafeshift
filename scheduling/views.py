@@ -9,9 +9,38 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from .models import Employee, Shift
+from .models import Availability, Employee, Shift
 
+class AvailabilityChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args, available_ids, **kwargs):
+        self.available_ids = available_ids
+        super().__init__(*args, **kwargs)
 
+    def label_from_instance(self, employee):
+        if not employee.is_active:
+            status = "Pasif çalışan"
+        elif employee.pk in self.available_ids:
+            status = "Uygun"
+        else:
+            status = "Uygun değil"
+
+        return f"{employee.name} — {status}"
+
+    def clean(self, value):
+        employee = super().clean(value)
+
+        if employee is not None:
+            if (
+                not employee.is_active
+                or employee.pk not in self.available_ids
+            ):
+                raise forms.ValidationError(
+                    "Bu çalışan bu vardiyaya uygun değil. "
+                    "Uygun bir çalışan seç veya atamayı kaldır."
+                )
+
+        return employee
+    
 @staff_member_required
 @require_http_methods(["GET", "POST"])
 def weekly_schedule(request):
@@ -50,6 +79,22 @@ def weekly_schedule(request):
         request.POST if request.method == "POST" else None
     )
 
+    available_by_slot = {}
+
+    for availability in Availability.objects.filter(
+        employee__is_active=True
+    ):
+        if availability.day_available:
+            key = (availability.weekday, Shift.Period.DAY)
+            available_by_slot.setdefault(key, set()).add(
+                availability.employee_id
+            )
+
+        if availability.evening_available:
+            key = (availability.weekday, Shift.Period.EVENING)
+            available_by_slot.setdefault(key, set()).add(
+                availability.employee_id
+            )
     days = []
     slots = []
 
@@ -67,8 +112,14 @@ def weekly_schedule(request):
                 Q(is_active=True) | Q(pk=existing_id)
             ).order_by("name")
 
-            form.fields[field_name] = forms.ModelChoiceField(
+            available_ids = available_by_slot.get(
+                (current_date.weekday(), period),
+                set(),
+            )
+
+            form.fields[field_name] = AvailabilityChoiceField(
                 queryset=employees,
+                available_ids=available_ids,
                 required=False,
                 empty_label="— Atanmadı —",
                 initial=existing_id,

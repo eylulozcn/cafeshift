@@ -49,3 +49,50 @@ class Shift(models.Model):
             f"{self.date:%d.%m.%Y} | "
             f"{self.get_period_display()} | {self.employee}"
         )
+
+class Availability(models.Model):
+    WEEKDAYS = [
+        (0, "Pazartesi"),
+        (1, "Salı"),
+        (2, "Çarşamba"),
+        (3, "Perşembe"),
+        (4, "Cuma"),
+        (5, "Cumartesi"),
+        (6, "Pazar"),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="availability",
+        verbose_name="Çalışan",
+    )
+
+    weekday = models.IntegerField(
+        "Gün",
+        choices=WEEKDAYS,
+    )
+
+    day_available = models.BooleanField(
+        "12:00–18:00 uygun",
+        default=False,
+    )
+
+    evening_available = models.BooleanField(
+        "18:00–00:00 uygun",
+        default=False,
+    )
+
+    class Meta:
+        ordering = ["weekday"]
+        verbose_name = "Müsaitlik"
+        verbose_name_plural = "Müsaitlikler"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "weekday"],
+                name="unique_employee_weekday_availability",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.employee} — {self.get_weekday_display()}"
